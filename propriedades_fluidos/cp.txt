@@ -1,0 +1,99 @@
+function y = cp(t,frac_mol)
+%#codegen
+%
+%----------------- FUNÇÃO CALOR ESPECÍFICO DOS GASES ----------------------
+%
+%   -Autor: Janderson Honório Mazzine Afonso
+%   -Email: janderson.mazzine2015@engenharia.ufjf.br
+%   -Ano: 2020
+%   -Referência: BUCKER, D.; SPAN, R.; WAGNER, W. Thermodynamic property 
+%                models for moist air and combustion gases. J. Eng. Gas 
+%                Turbines Power, v. 125, n. 1, p. 374-384, 2003.
+%                https://doi.org/10.1115/1.1520154
+%   -Citar como: AFONSO. Janderson H. M. Propriedade dos Gases de Combustão
+%                Aplicados em Turbinas a Gás - Calor específico. UFJF,
+%                2020.
+%   -Versão: 14.05.2020
+%
+%----------------------- DESCRIÇÃO DA FUNÇÃO ------------------------------
+%
+%   A presente função retorna o calor específico a pressão constante em  
+%   J/kg.K de uma mistura de gases que compõe o ar e produtos da combustão
+%   para temperaturas entre 200 e 3300 Kelvin de acordo com o modelo pro- 
+%   posto por BUCKER, SPAN e WAGNER (2003) em seu trabalho "Thermodynamic 
+%   Property Model for Moist Air and Combustion Gases" a partir da tempe-
+%   ratura da mistura e sua composição molar.
+%
+%--------------------------- INSTRUÇÕES -----------------------------------
+%
+%                       [cp] = cp( t, frac_mol)
+%
+%   A temperatura de entrada deve ser dada em Kelvin [K], e a composição 
+%   molar da mistura e a base dimensional de cálculo. As frações molares 
+%   devem ser dada em um vetor com o seguinte formato:
+%
+%                 (%N2 %O2 %Ar %Ne %H2O %CO2 %CO %SO2)
+%
+%   Caso alguma das espécies não faça parte da mistura deve ser atribuido o
+%   valor 0 (zero) a sua posição no vetor. A soma das frações de cada espé-
+%   cie deve ser sempre igual a 1.
+%
+%------------------------ MENSAGEM DE ERRO -------------------------------- 
+%
+%   Uma mensagem de erro será exibida caso a temperatura
+%   informada esteja fora dos limites de validade do modelo (entre 200 e
+%   3300 K) ou caso a soma das concentrações dos componentes do gás em
+%   estudo seja diferente de 1.
+%
+%---------------------------- EXEMPLOS ------------------------------------
+%
+%   1)Definir o calor específico a pressão constante do ar atmosférico
+%   considerando uma composição de Oxigênio (21%) e Nitrogênio (79%)   
+%   apenas, a 30ºC.
+%
+%   t = 303.15;
+%   f_mol = [0.79 0.21 0 0 0 0 0 0]
+%   [cp] = cp( t, f_mol )
+%
+%   ANS:
+%   cp = 1.01438564661116e+003
+%
+%--------------------------------------------------------------------------
+
+
+if t < 200 || t > 3300 %checa aplicabilidade do modelo
+    error('Temperatura informada fora do intervalo de validade do modelo(200 K < T < 3300 K)')
+elseif sum(frac_mol) ~= 1 %checa composição informada
+    error('A soma das frações de composição é diferente de 1')
+end
+
+b_i = [0.00 -1.50 -1.25 -0.75 -0.50 -0.25 0.25 0.50 0.75 1.00];
+%b_i : vetor de coeficientes bi
+   
+a_ki = [2.475830346*10^6 -2.815239891*10^4 1.116401165*10^5 -8.147644187*10^5 2.185120405*10^6 -2.978031305*10^6 -1.308008001*10^6 4.305948510*10^5 -8.082302563*10^4 6.622545214*10^3;
+        6.408242565*10^5 -1.599937045*10^3 9.984801256*10^3 -1.280873444*10^5 4.186599156*10^5 -6.720142804*10^5 -3.799977202*10^5 1.378691801*10^5 -2.806954185*10^4 2.459943097*10^3;
+        2.078618000*10^1 0 0 0 0 0 0 0 0 0; 
+        2.078618000*10^1 0 0 0 0 0 0 0 0 0;
+        -4.747782033*10^6 4.799919289*10^4 -1.931588954*10^5 1.460728340*10^6 -4.000075762*10^6 5.576209858*10^6 2.570488297*10^6 -8.670521019*10^5 1.666429390*10^5 -1.396634620*10^4;
+        1.103695150*10^6 -1.365096910*10^4 5.357704944*10^4 -3.816063864*10^5 1.008950325*10^6 -1.352938737*10^6 -5.701809626*10^5 1.828513133*10^5 -3.329618224*10^4 2.635366727*10^3;
+        2.670755728*10^6 -2.715629936*10^4 1.096509012*10^5 -8.303525865*10^5 2.269213594*10^6 -3.151865706*10^6 -1.438126165*10^6 4.824833432*10^5 -9.227524508*10^4 7.701550175*10^3;
+        -2.076653674*10^6 2.589571253*10^4 -1.012523438*10^5 7.161863952*10^5 -1.889754780*10^6 2.535020356*10^6 1.082842148*10^6 -3.524395911*10^5 6.552035769*10^4 -5.325634796*10^3;]; 
+%a_ki : matriz coef. ak_i, i = (1:10) (colunas) e especies (linhas)
+
+t_0 = 273.15; %Temperatura de referência, em K
+cp = 0;
+      
+mm_esp = [28.014 31.998 39.948 20.180 18.015 40.019 28.009 64.063]; 
+%mm_esp : massa molar das espécies
+
+for i = 1:8, %Percorre espécies
+  cp_esp = 0;
+  if frac_mol(i) > 0  %evita o cálculo das especies com concentração nula
+      for j = 1:10, %percorre coeficientes
+          cp_esp = cp_esp + a_ki(i,j)*((t/t_0)^b_i(j));
+      end
+  end
+  cp = cp + cp_esp*frac_mol(i)*(1000/mm_esp(i));
+end
+ 
+y = cp;

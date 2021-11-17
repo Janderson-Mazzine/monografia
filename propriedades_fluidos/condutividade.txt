@@ -1,0 +1,162 @@
+function y = k(t, frac_mol)
+%#codegen
+%
+%------------------ FUNÇÃO CONDUTIVIDADE DOS GASES ------------------------
+%
+%   -Autor: Janderson Honório Mazzine Afonso
+%   -Email: janderson.mazzine2015@engenharia.ufjf.br
+%   -Ano: 2020
+%
+%   -Referências: 
+%   [1]MATOS, M. A. A. Propriedades termofísicas de algunsgases, sólidos e  
+%   da água. Aveiro: Editora da Universidade de Aveiro, 1998.
+%   [2]BIRD R. B., WARREN E. S., and EDWIN N. L. Transport Phenomena. 2nd 
+%   ed. New York: Jonh Wiley & Sons, 2002.
+%   [3]IUPAC. Periodic Table of Elements. Disponivel em
+%   <https://iupac.org/what-we-do/periodic-table-of-elements/> Acesso em
+%   01 set. 2020.
+%
+%   -Citar como: AFONSO. Janderson H. M. Condutividade dos Gases de 
+%                Combustão Aplicados em Turbinas a Gás. UFJF, 2020.
+%   -Versão: 03.09.2020
+%
+%----------------------- DESCRIÇÃO DA FUNÇÃO ------------------------------
+%
+%   A presente função retorna a condutividade, em [W/m.K] de um gás puro 
+%   segundo a expressão e coeficientes de regressão apresentados por Matos  
+%   [1], e da mistura considerando também a correlação semiempírica 
+%   desenvolvida por Wilke e apresentada no livro de Bird [2], considerando
+%   as massas molares dos atomos na tabela da IUPAC [3].
+%
+%--------------------------- INSTRUÇÕES -----------------------------------
+%
+%                   [k] = cond_gas( t, frac_mol)
+%
+%   A temperatura de entrada deve ser dada em Kelvin [K] e as frações 
+%   molares devem ser dada em um vetor com o seguinte formato:
+%   
+%                 (%N2 %O2 %Ar %Ne %H2O %CO2 %CO %SO2)
+%
+%   Caso alguma das espécies não faça parte da mistura deve ser atribuido o
+%   valor 0 (zero) a sua posição no vetor. A soma das frações de cada espé-
+%   cie deve ser sempre igual a 1.
+%   
+%   Porém, o presente modelo não contempla o gas neônio. Caso seja
+%   necessário, deve-se implementar seus coeficientes na matriz.
+%
+%-------------------- MENSAGEM DE ERRO E AVISOS --------------------------- 
+%
+%   Uma mensagem de erro será exibida caso a soma das concentrações dos 
+%   componentes do gás em estudo seja diferente de 1, ou caso tente-se 
+%   computar um gás que possua Neônio em sua composição, o qual não é 
+%   contemplado no presente modelo.
+%   
+%   Um aviso será exibido caso a temperatura desejada da mistura esteja
+%   fora do intervalo de temperatura de algum dos gases puros que a compõe,
+%   conforme a tabela abaixo:
+%
+%              Gas	|	T_min (K)	|	T_max (K)
+%              --------------------------------------------------
+%               N2 		  250 			  1500
+%               O2		  250 			  1500
+%               Ar		  110			  1300
+%               Ne		  NaN			  NaN
+%               H2O 	  	  400 			  1500
+%               CO2 	          250 			  1500 
+%               CO		  250 			  1500
+%               SO2 	          170 			  1700
+%
+%---------------------------- EXEMPLOS ------------------------------------
+%
+%   1)Definir a condutividade do ar atmosférico considerando uma composição 
+%   de Oxigênio (21%) e Nitrogênio (79%) apenas, a 100ºC.
+%
+%   t = 373.15;
+%   f_mol = [0.79 0.21 0 0 0 0 0 0];
+%   [k] = cond_gas( t, f_mol)
+%
+%   ANS: 30.8821778098117e-003
+%   
+%--------------------------------------------------------------------------
+
+
+if  sum(frac_mol) ~= 1 %checa composição informada
+    error('A soma das frações de composição é diferente de 1');
+elseif frac_mol(4) ~= 0
+    error('Erro: Gás Neonio não contemplado no modelo');
+end
+
+mm_el = [28.014 31.998 39.95 20.180 33.006 44.009 28.01 64.058]; %massa mol
+ar dos gases puros segundo IUPAC 2020, [g/mol]
+
+k = 0;
+cont = 0;
+cond = zeros(1, 8);
+vis = zeros(1, 8);
+fm = zeros(1, 8);
+mm = zeros(1, 8);
+psi_ab = zeros(1, 8);
+
+coef_cond = [0.47088*10^(-2)	0.78562*10^(-4) 	-0.26266*10^(-7)
+0.55540*10^(-11) 	250 	1500;
+            0.33470*10^(-2) 	0.81930*10^(-4) 	-0.16987*10^(-7)
+0.29881*10^(-11) 	250 	1500;
+            0.27132*10^(-2) 	0.55394*10^(-4) 	-0.21772*10^(-7)
+0.55268*10^(-11) 	110 	1500;
+            0                   0                   	0               
+0	              	 0       0;
+            -0.79293*10^(-2) 	0.76030*10^(-4) 	0.31270*10^(-7)
+-0.10805*10^(-10)	400 	1500;
+            -0.95947*10^(-2) 	0.92700*10^(-4) 	-0.19366*10^(-7)
+0.32189*10^(-11) 	250 	1500;
+            0.10224*10^(-2)	0.89079*10^(-4) 	-0.32557*10^(-7)
+0.89390*10^(-11) 	250 	1500;
+            -0.80851*10^(-2)	0.63433*10^(-4) 	-0.13817*10^(-7)
+0.23028*10^(-11) 	300     1700];
+
+
+coef_visc = [0.31619*10^(-5)	0.56192*10^(-7) 	-0.24148*10^(-10)
+0.61370*10^(-14) 	250 	1500;
+            0.26918*10^(-5)	0.68519*10^(-7)  	-0.29857*10^(-10)
+0.75600*10^(-14) 	250 	1500;
+            0.50458*10^(-5)	0.63459*10^(-7)  	-0.17506*10^(-10)
+0.37009*10^(-14) 	250     1300;
+            0                   0                 	0                   
+0			0       0;
+            -0.41991*10^(-5) 	0.45336*10^(-7)    	-0.50749*10^(-11)
+0.15526*10^(-14) 	400 	1500;
+            -0.16636*10^(-5)	0.63064*10^(-7)  	-0.26223*10^(-10)
+0.58813*10^(-14) 	250 	1500; 
+            0.30012*10^(-5)	0.56504*10^(-7)  	-0.23998*10^(-10)
+0.62734*10^(-14) 	250 	1500; 
+            0-.37930*10^(-5)	0.46450*10^(-7) 	-0.72760*10^(-11)
+0                   	170 	1700];
+
+    for i = 1:8, %percorre espécies
+        if frac_mol(i) ~= 0  %evita o cálculo das especies com concentração
+ nula
+            cont=cont+1;
+            fm(cont)= frac_mol(i);
+            mm(cont)= mm_el(i);
+            vis(cont)=coef_visc(i,1)+coef_visc(i,2)*t+coef_visc(i,3)*t^2+co
+ef_visc(i,4)*t^3;
+            cond(cont)=coef_cond(i,1)+coef_cond(i,2)*t+coef_cond(i,3)*t^2+c
+oef_cond(i,4)*t^3;
+            if t<coef_visc(i,5)||t<coef_cond(i,5)
+                error('A temperatura está abaixo do limite de aplicabilidad
+e do modelo de condutividade para um dos gases')
+            elseif t>coef_visc(i,6)||t>coef_cond(i,6)
+                error('A temperatura está acima do limite de aplicabilidade
+ do modelo de condutividade para um dos gases')
+            end
+        end
+    end
+    
+    for a = 1:cont, %calculo psi
+        for b = 1:cont,
+            psi_ab(a)=psi_ab(a)+fm(b)*((1/sqrt(8))*(1+mm(a)/mm(b))^(-0.5)*(
+1+(vis(a)/vis(b))^(0.5)*(mm(b)/mm(a))^(0.25))^2);
+        end
+        k=k+((fm(a)*cond(a))/psi_ab(a));
+    end    
+y = k;

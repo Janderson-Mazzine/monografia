@@ -1,0 +1,69 @@
+function y = rho(t,p,frac_mol)
+%#codegen
+%
+%------------------- FUNÇÃO DENSIDADE DOS GASES -------------------------
+%
+%   -Autor: Janderson Honório Mazzine Afonso
+%   -Email: janderson.mazzine2015@engenharia.ufjf.br
+%   -Ano: 2020
+%   -Referência: IUPAC. Periodic Table of Elements. Disponivel em
+%   <https://iupac.org/what-we-do/periodic-table-of-elements/> Acesso em
+%   01 set. 2020.
+%   -Citar como: AFONSO. Janderson H. M. Densidade dos Gases de Combustão
+%                Aplicados em Turbinas a Gás. UFJF, 2020.
+%   -Versão: 01.09.2020
+%
+%----------------------- DESCRIÇÃO DA FUNÇÃO ------------------------------
+%
+%   A presente função retorna a densidade, em [kg/m^3] de um gás puro ou 
+%   mistura de gases ideais segundo a equação de Clapeyron, considerando as
+%   massas molares dos atomos na tabela da IUPAC
+%
+%--------------------------- INSTRUÇÕES -----------------------------------
+%
+%              [rho] = densi_gas( t, p, frac_mol)
+%
+%   A temperatura de entrada deve ser dada em Kelvin [K], a pressão em mega
+%   Pascal [Pa]. As frações molares devem ser dada em um vetor com o  
+%   seguinte formato:
+%
+%                 (%N2 %O2 %Ar %Ne %H2O %CO2 %CO %SO2)
+%
+%   Caso alguma das espécies não faça parte da mistura deve ser atribuido o
+%   valor 0 (zero) a sua posição no vetor. A soma das frações de cada espé-
+%   cie deve ser sempre igual a 1.
+%
+%------------------------ MENSAGEM DE ERRO -------------------------------- 
+%
+%   Uma mensagem de erro será exibida caso a soma das concentrações dos 
+%   componentes do gás em estudo seja diferente de 1.
+%
+%---------------------------- EXEMPLOS ------------------------------------
+%
+%   1)Definir a densidade do ar atmosférico considerando uma composição de 
+%   Oxigênio (21%) e Nitrogênio (79%) apenas, a 100ºC e 2 atm.
+%
+%   t = 373.15;
+%   p = 0.202650;
+%   frac_mol = [0.79 0.21 0 0 0 0 0 0];
+%   [rho] = densi_gas( t, p, frac_mol);
+%
+%   ANS: 1.88444931513629e+000
+%   
+%--------------------------------------------------------------------------
+
+if  sum(frac_mol) ~= 1 %checa composição informada
+    error('A soma das frações de composição é diferente de 1')
+end
+
+mm_el = [28.014 31.998 39.95 20.180 33.006 44.009 28.01 64.058]; %massa molar dos gases puros segundo IUPAC 2020, [g/mol]
+
+rho = 0; 
+R=8.314462; %Constante dos gases, em [m^3 Pa kg^-1 mol^-1]
+    for j = 1:8, %percorre espécies
+        if frac_mol(j) > 0  %evita o cálculo das especies com concentração nula
+            rho=rho+(((mm_el(j)*10^(-3))*frac_mol(j)*(p))/(R*t)); 
+        end
+    end
+    
+    y = rho;

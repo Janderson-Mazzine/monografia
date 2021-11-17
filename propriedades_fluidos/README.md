@@ -1,1 +1,1 @@
-Os presentes códigos são funções escritas em MATLAB, e foram desenvolvidos de acordo com a literatura, sendo suas referências individuais e limites de aplicação listadas nos comentários, assim como as instruções de sua utilização.
+Os presentes códigos são funções escritas em MATLAB, e foram desenvolvidos de acordo com a literatura, sendo suas referências individuais e limites de aplicação listadas nos comentários, assim como as instruções de sua utilização. Esses códigos foram implementados em blocos de cálculo no SIMULINK.
